@@ -1,0 +1,1410 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>War Room — Coaching Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #10161B;
+    --panel: #171F26;
+    --panel-raised: #1D2731;
+    --line: #2A3641;
+    --gold: #C9A227;
+    --gold-dim: #8B7420;
+    --steel: #5C89AD;
+    --text: #E9E7DF;
+    --text-dim: #93A0AA;
+    --text-faint: #5B6770;
+    --win: #4F9D69;
+    --lose: #C1544A;
+    --radius-lg: 4px;
+    --radius-sm: 2px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height:100vh;
+    display:flex;
+  }
+  h1,h2,h3, .display{
+    font-family:'Barlow Condensed', sans-serif;
+    font-weight:600;
+    letter-spacing:0.01em;
+  }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar{
+    width:220px;
+    flex-shrink:0;
+    background: var(--panel);
+    border-right:1px solid var(--line);
+    display:flex;
+    flex-direction:column;
+    padding:24px 0;
+    position:sticky;
+    top:0;
+    height:100vh;
+  }
+  .brand{
+    padding:0 20px 24px 20px;
+    border-bottom:1px solid var(--line);
+    margin-bottom:12px;
+  }
+  .brand .mark{
+    font-family:'Barlow Condensed';
+    font-size:26px;
+    font-weight:700;
+    color:var(--gold);
+    line-height:1;
+  }
+  .brand .sub{
+    font-size:11px;
+    color:var(--text-faint);
+    margin-top:4px;
+  }
+  nav{display:flex; flex-direction:column; gap:2px; padding:8px 12px;}
+  nav button{
+    all:unset;
+    cursor:pointer;
+    padding:11px 12px;
+    border-radius:var(--radius-sm);
+    color:var(--text-dim);
+    font-size:14px;
+    font-weight:500;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    transition: background .15s, color .15s;
+  }
+  nav button .num{
+    font-family:'Barlow Condensed';
+    font-size:12px;
+    color:var(--text-faint);
+    width:18px;
+  }
+  nav button:hover{ background: var(--panel-raised); color:var(--text); }
+  nav button.active{ background: var(--panel-raised); color: var(--gold); }
+  nav button.active .num{ color: var(--gold); }
+
+  .sidebar-foot{
+    margin-top:auto;
+    padding:12px 20px 0 20px;
+    border-top:1px solid var(--line);
+  }
+  .sidebar-foot button{
+    all:unset; cursor:pointer;
+    font-size:12px; color:var(--text-faint);
+    display:block; padding:8px 0;
+  }
+  .sidebar-foot button:hover{ color: var(--steel); }
+
+  /* ---------- Main ---------- */
+  main{ flex:1; padding:36px 44px; max-width:1180px; }
+  .page-head{
+    display:flex; justify-content:space-between; align-items:flex-end;
+    margin-bottom:28px; flex-wrap:wrap; gap:16px;
+  }
+  .page-head h1{ font-size:34px; color:var(--text); }
+  .page-head p{ color:var(--text-dim); font-size:13.5px; margin-top:4px; max-width:520px; }
+  .btn{
+    all:unset; cursor:pointer;
+    background: var(--gold);
+    color:#1A1305;
+    font-weight:600;
+    font-size:13px;
+    padding:10px 18px;
+    border-radius:var(--radius-sm);
+    transition: background .15s;
+  }
+  .btn:hover{ background:#DCB53A; }
+  .btn.ghost{
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--text-dim);
+  }
+  .btn.ghost:hover{ border-color:var(--steel); color:var(--text); }
+  .btn.small{ padding:6px 12px; font-size:12px; }
+  .btn.danger{ background:transparent; border:1px solid var(--lose); color:var(--lose); }
+  .btn.danger:hover{ background: var(--lose); color:#fff; }
+
+  .toolbar{ display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; align-items:center;}
+  input, select, textarea{
+    background: var(--panel-raised);
+    border:1px solid var(--line);
+    color: var(--text);
+    padding:9px 12px;
+    border-radius: var(--radius-sm);
+    font-family:'Inter'; font-size:13.5px;
+  }
+  input:focus, select:focus, textarea:focus{ outline:none; border-color: var(--steel); }
+  .search{ min-width:220px; }
+
+  /* Empty state */
+  .empty{
+    border:1px dashed var(--line);
+    border-radius: var(--radius-lg);
+    padding:48px 24px;
+    text-align:center;
+    color: var(--text-faint);
+  }
+  .empty .display{ font-size:20px; color:var(--text-dim); margin-bottom:6px;}
+
+  /* Cards grid for roster */
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(230px,1fr)); gap:14px; }
+  .card{
+    background: var(--panel);
+    border:1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding:16px;
+    position:relative;
+  }
+  .card .role-tag{
+    font-size:10.5px; text-transform:uppercase; letter-spacing:.06em;
+    color: var(--steel); font-weight:600; margin-bottom:8px; display:inline-block;
+  }
+  .card h3{ font-size:22px; color:var(--text); }
+  .card .ign{ font-size:12px; color:var(--text-faint); margin-bottom:10px;}
+  .card .pool{ font-size:12.5px; color:var(--text-dim); line-height:1.5; margin-bottom:12px; min-height:36px;}
+  .card .rowbtns{ display:flex; gap:8px; }
+  .card .rowbtns .btn{ flex:1; text-align:center; }
+
+  /* Opponent cards */
+  .opp-card{
+    background: var(--panel);
+    border:1px solid var(--line);
+    border-left:3px solid var(--gold-dim);
+    border-radius: var(--radius-lg);
+    padding:18px 20px;
+    margin-bottom:12px;
+  }
+  .opp-card .opp-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;}
+  .opp-card h3{ font-size:22px; }
+  .opp-card .meta{ font-size:12px; color:var(--text-faint); }
+  .opp-card .threat{ font-size:13px; color:var(--text-dim); margin-top:10px; line-height:1.6; }
+  .opp-card .threat b{ color:var(--text); font-weight:600; }
+  .opp-card .tags{ margin-top:10px; display:flex; gap:6px; flex-wrap:wrap; }
+  .tag{
+    font-size:11px; background: var(--panel-raised); border:1px solid var(--line);
+    padding:3px 9px; border-radius:12px; color:var(--text-dim);
+  }
+  .opp-card .rowbtns{ margin-top:12px; display:flex; gap:8px; }
+
+  /* Tournament timeline */
+  .agenda-list{ display:flex; flex-direction:column; gap:0; }
+  .agenda-item{
+    display:grid; grid-template-columns: 92px 1fr auto; gap:18px;
+    padding:16px 0; border-bottom:1px solid var(--line); align-items:center;
+  }
+  .agenda-item:last-child{ border-bottom:none; }
+  .agenda-date{ text-align:center; }
+  .agenda-date .d{ font-family:'Barlow Condensed'; font-size:28px; font-weight:700; color:var(--gold); line-height:1;}
+  .agenda-date .m{ font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.04em;}
+  .agenda-body h3{ font-size:18px; color:var(--text); }
+  .agenda-body .meta{ font-size:12.5px; color:var(--text-dim); margin-top:3px; }
+  .status-pill{
+    font-size:11px; font-weight:600; padding:4px 11px; border-radius:12px;
+    text-transform:uppercase; letter-spacing:.03em;
+  }
+  .status-upcoming{ background: rgba(92,137,173,.15); color: var(--steel); }
+  .status-done{ background: rgba(79,157,105,.15); color: var(--win); }
+  .status-live{ background: rgba(201,162,39,.18); color: var(--gold); }
+  .agenda-actions{ display:flex; gap:8px; align-items:center; }
+
+  /* Modal */
+  .overlay{
+    position:fixed; inset:0; background:rgba(8,10,12,.7);
+    display:none; align-items:center; justify-content:center; z-index:50;
+    padding:20px;
+  }
+  .overlay.open{ display:flex; }
+  .modal{
+    background: var(--panel-raised);
+    border:1px solid var(--line);
+    border-radius: var(--radius-lg);
+    width:100%; max-width:460px;
+    padding:26px;
+    max-height:88vh; overflow-y:auto;
+  }
+  .modal h2{ font-size:24px; margin-bottom:18px; color:var(--text); }
+  .field{ margin-bottom:14px; }
+  .field label{ display:block; font-size:12px; color:var(--text-dim); margin-bottom:6px; }
+  .field input, .field select, .field textarea{ width:100%; }
+  .field textarea{ resize:vertical; min-height:60px; }
+  .field-row{ display:flex; gap:10px; }
+  .field-row .field{ flex:1; }
+  .modal-actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:20px; }
+
+  .stat-strip{ display:flex; gap:12px; margin-bottom:26px; flex-wrap:wrap; }
+  .stat{
+    background: var(--panel); border:1px solid var(--line); border-radius:var(--radius-lg);
+    padding:14px 18px; min-width:120px;
+  }
+  .stat .n{ font-family:'Barlow Condensed'; font-size:30px; font-weight:700; color:var(--gold); line-height:1; }
+  .stat .l{ font-size:11.5px; color:var(--text-faint); margin-top:4px; }
+
+  /* Team profile & logos */
+  .team-profile{
+    display:flex; align-items:center; gap:16px;
+    background: var(--panel); border:1px solid var(--line); border-radius: var(--radius-lg);
+    padding:16px 20px; margin-bottom:24px;
+  }
+  .logo-box{
+    width:56px; height:56px; border-radius:50%; flex-shrink:0;
+    background: var(--panel-raised); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden; cursor:pointer;
+    font-family:'Barlow Condensed'; font-size:20px; color:var(--text-faint); font-weight:700;
+  }
+  .logo-box img{ width:100%; height:100%; object-fit:cover; }
+  .team-info{ flex:1; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .team-name-input{
+    background:transparent; border:none; border-bottom:1px solid transparent;
+    font-family:'Barlow Condensed'; font-size:22px; font-weight:600; color:var(--text);
+    padding:4px 0; min-width:180px;
+  }
+  .team-name-input:focus{ outline:none; border-bottom:1px solid var(--steel); }
+  .team-info .hint{ font-size:11.5px; color:var(--text-faint); }
+
+  .opp-logo{
+    width:42px; height:42px; border-radius:50%; flex-shrink:0;
+    background: var(--panel-raised); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+    font-family:'Barlow Condensed'; font-size:16px; color:var(--text-faint); font-weight:700;
+  }
+  .opp-logo img{ width:100%; height:100%; object-fit:cover; }
+  .opp-name-wrap{ display:flex; align-items:center; gap:12px; }
+  .h2h-line{ margin-top:10px; font-size:12.5px; color:var(--text-dim); }
+  .h2h-line b{ color:var(--text); font-weight:600; }
+  .logo-field{ display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+  .logo-field .logo-box{ width:52px; height:52px; }
+  .photo-box{ border-radius:8px; }
+  .opp-photo{
+    width:48px; height:48px; border-radius:8px; flex-shrink:0;
+    background: var(--panel-raised); border:1px solid var(--line);
+    overflow:hidden; cursor:zoom-in;
+  }
+  .opp-photo img{ width:100%; height:100%; object-fit:cover; display:block; }
+
+  /* Match results (Pertandingan) */
+  .result-card{
+    background: var(--panel); border:1px solid var(--line);
+    border-left:3px solid var(--steel);
+    border-radius: var(--radius-lg);
+    padding:18px 20px; margin-bottom:12px;
+  }
+  .result-card.is-win{ border-left-color: var(--win); }
+  .result-card.is-lose{ border-left-color: var(--lose); }
+  .result-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; }
+  .result-head h3{ font-size:20px; }
+  .result-head .meta{ font-size:12px; color:var(--text-faint); margin-top:2px; display:block; }
+  .result-card .threat{ font-size:13px; color:var(--text-dim); margin-top:10px; line-height:1.6; }
+  .result-card .threat b{ color:var(--text); font-weight:600; }
+  .result-card .rowbtns{ margin-top:14px; display:flex; gap:8px; }
+
+  .shot-thumbs{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+  .shot-thumb{ width:68px; height:68px; border-radius:var(--radius-sm); overflow:hidden; border:1px solid var(--line); cursor:zoom-in; flex-shrink:0; }
+  .shot-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .no-shots{ font-size:12px; color:var(--text-faint); margin-top:12px; }
+
+  .shot-upload-field label{ display:block; font-size:12px; color:var(--text-dim); margin-bottom:6px; }
+  .shot-upload-btn{ display:inline-block; }
+  .shot-preview-list{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .shot-preview-item{ position:relative; width:64px; height:64px; border-radius:var(--radius-sm); overflow:hidden; border:1px solid var(--line); }
+  .shot-preview-item img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .shot-remove{
+    all:unset; position:absolute; top:2px; right:2px; cursor:pointer;
+    background:rgba(8,10,12,.75); color:#fff; width:16px; height:16px;
+    border-radius:50%; font-size:10px; line-height:16px; text-align:center;
+  }
+
+  .lightbox-overlay{
+    position:fixed; inset:0; background:rgba(6,8,10,.88);
+    display:none; align-items:center; justify-content:center; z-index:80;
+    padding:32px; cursor:zoom-out;
+  }
+  .lightbox-overlay.open{ display:flex; }
+  .lightbox-overlay img{ max-width:92vw; max-height:92vh; border-radius:var(--radius-sm); box-shadow:0 8px 30px rgba(0,0,0,.5); }
+
+  section.page{ display:none; }
+  section.page.active{ display:block; }
+
+  /* Stats page */
+  .hero-row{
+    display:grid; grid-template-columns: 140px 1fr 90px auto;
+    gap:16px; align-items:center;
+    padding:12px 0; border-bottom:1px solid var(--line);
+  }
+  .hero-row:last-child{ border-bottom:none; }
+  .hero-row .hname{ font-weight:600; font-size:14px; }
+  .hero-row .games{ font-size:11.5px; color:var(--text-faint); }
+  .bar-track{ height:8px; background:var(--panel-raised); border-radius:4px; overflow:hidden; border:1px solid var(--line); }
+  .bar-fill{ height:100%; border-radius:4px; background: var(--steel); }
+  .bar-fill.high{ background: var(--win); }
+  .bar-fill.low{ background: var(--lose); }
+  .hero-row .wr{ font-family:'Barlow Condensed'; font-size:18px; font-weight:700; text-align:right; }
+  .match-log{ margin-top:30px; }
+  .match-log h2{ font-size:18px; color:var(--text-dim); margin-bottom:12px; font-weight:600; }
+  .match-item{
+    display:grid; grid-template-columns: 90px 1fr auto auto; gap:14px; align-items:center;
+    padding:10px 0; border-bottom:1px solid var(--line); font-size:13.5px;
+  }
+  .match-item:last-child{ border-bottom:none; }
+  .result-pill{ font-size:11px; font-weight:600; padding:3px 10px; border-radius:12px; text-align:center; }
+  .result-win{ background: rgba(79,157,105,.15); color: var(--win); }
+  .result-lose{ background: rgba(193,84,74,.15); color: var(--lose); }
+
+  /* Draft planner */
+  .draft-card{
+    background: var(--panel); border:1px solid var(--line); border-radius: var(--radius-lg);
+    padding:20px; margin-bottom:16px;
+  }
+  .draft-card .draft-head{ display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:10px; margin-bottom:14px;}
+  .draft-card h3{ font-size:22px; }
+  .draft-cols{ display:grid; grid-template-columns:repeat(4, 1fr); gap:16px; }
+  .draft-col .col-label{ font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-faint); margin-bottom:8px; font-weight:600; }
+  .draft-col.ban-us .col-label{ color: var(--lose); }
+  .draft-col.ban-them .col-label{ color: var(--lose); }
+  .draft-col.pick-us .col-label{ color: var(--win); }
+  .draft-col.pick-them .col-label{ color: var(--steel); }
+  .draft-col .chips{ display:flex; flex-direction:column; gap:6px; }
+  .chip-item{ font-size:12.5px; background: var(--panel-raised); border:1px solid var(--line); border-radius:var(--radius-sm); padding:6px 10px; }
+  .draft-card .notes{ margin-top:14px; font-size:13px; color:var(--text-dim); line-height:1.6; border-top:1px solid var(--line); padding-top:12px; }
+  .draft-card .rowbtns{ margin-top:14px; }
+  @media (max-width: 780px){ .draft-cols{ grid-template-columns:repeat(2,1fr); } }
+
+  @media (max-width: 780px){
+    body{ flex-direction:column; }
+    .sidebar{ width:100%; height:auto; position:relative; flex-direction:row; overflow-x:auto; padding:14px; }
+    .brand{ display:none; }
+    nav{ flex-direction:row; padding:0; }
+    .sidebar-foot{ display:none; }
+    main{ padding:24px 18px; }
+    .agenda-item{ grid-template-columns: 60px 1fr; }
+    .agenda-actions{ grid-column: 1 / -1; justify-content:flex-start; margin-top:6px;}
+  }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="brand">
+    <div class="mark">WAR ROOM</div>
+    <div class="sub">MLBB Coaching Dashboard</div>
+  </div>
+  <nav>
+    <button class="nav-btn active" data-page="roster"><span class="num">01</span> Roster Tim</button>
+    <button class="nav-btn" data-page="scouting"><span class="num">02</span> Data Lawan</button>
+    <button class="nav-btn" data-page="agenda"><span class="num">03</span> Agenda Turnamen</button>
+    <button class="nav-btn" data-page="results"><span class="num">04</span> Pertandingan</button>
+    <button class="nav-btn" data-page="draft"><span class="num">05</span> Draft Planner</button>
+  </nav>
+  <div class="sidebar-foot">
+    <button id="exportBtn">Export data (.json)</button>
+    <button id="importBtn">Import data (.json)</button>
+    <input type="file" id="importFile" accept=".json" style="display:none">
+  </div>
+</aside>
+
+<main>
+
+  <!-- ===================== ROSTER ===================== -->
+  <section class="page active" id="page-roster">
+    <div class="page-head">
+      <div>
+        <h1>Roster Tim</h1>
+        <p>Pemain, role, dan hero pool tim yang kamu tangani.</p>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button class="btn ghost" id="addMatchBtn">+ Catat Hasil</button>
+        <button class="btn" id="addPlayerBtn">+ Tambah Pemain</button>
+      </div>
+    </div>
+
+    <div class="team-profile">
+      <div class="logo-box" id="teamLogoBox">
+        <img id="teamLogoImg" style="display:none;">
+        <span id="teamLogoPlaceholder">T</span>
+      </div>
+      <input type="file" id="teamLogoInput" accept="image/*" style="display:none">
+      <div class="team-info">
+        <input id="teamNameInput" class="team-name-input" placeholder="Nama tim kamu">
+        <span class="hint">Klik logo untuk mengunggah/mengganti logo tim</span>
+      </div>
+    </div>
+
+    <div class="stat-strip" id="rosterStats"></div>
+    <div class="toolbar">
+      <input class="search" id="rosterSearch" placeholder="Cari pemain atau IGN...">
+    </div>
+    <div id="rosterGrid" class="grid"></div>
+
+    <div class="match-log">
+      <h2>Statistik win-rate hero tim</h2>
+      <div id="heroStatsList"></div>
+    </div>
+    <div class="match-log">
+      <h2>Riwayat pertandingan</h2>
+      <div id="matchLog"></div>
+    </div>
+  </section>
+
+  <!-- ===================== SCOUTING ===================== -->
+  <section class="page" id="page-scouting">
+    <div class="page-head">
+      <div>
+        <h1>Data Lawan</h1>
+        <p>Catatan scouting: gaya main, ban priority, dan ancaman utama tiap lawan.</p>
+      </div>
+      <button class="btn" id="addOppBtn">+ Tambah Lawan</button>
+    </div>
+    <div class="toolbar">
+      <input class="search" id="oppSearch" placeholder="Cari nama tim lawan...">
+    </div>
+    <div id="oppList"></div>
+  </section>
+
+  <!-- ===================== AGENDA ===================== -->
+  <section class="page" id="page-agenda">
+    <div class="page-head">
+      <div>
+        <h1>Agenda Turnamen</h1>
+        <p>Jadwal pertandingan, scrim, dan deadline penting.</p>
+      </div>
+      <button class="btn" id="addEventBtn">+ Tambah Agenda</button>
+    </div>
+    <div class="toolbar">
+      <select id="agendaFilter">
+        <option value="all">Semua status</option>
+        <option value="upcoming">Akan datang</option>
+        <option value="live">Sedang berlangsung</option>
+        <option value="done">Selesai</option>
+      </select>
+    </div>
+    <div id="agendaList" class="agenda-list"></div>
+  </section>
+
+  <!-- ===================== PERTANDINGAN ===================== -->
+  <section class="page" id="page-results">
+    <div class="page-head">
+      <div>
+        <h1>Pertandingan</h1>
+        <p>Hasil pertandingan turnamen: skor, lawan, dan bukti screenshot.</p>
+      </div>
+      <button class="btn" id="addResultBtn">+ Tambah Pertandingan</button>
+    </div>
+    <div class="toolbar">
+      <input class="search" id="resultSearch" placeholder="Cari lawan atau turnamen...">
+      <select id="resultFilter">
+        <option value="all">Semua hasil</option>
+        <option value="win">Menang</option>
+        <option value="lose">Kalah</option>
+      </select>
+    </div>
+    <div id="resultList"></div>
+  </section>
+
+  <!-- ===================== DRAFT PLANNER ===================== -->
+  <section class="page" id="page-draft">
+    <div class="page-head">
+      <div>
+        <h1>Draft Planner</h1>
+        <p>Rencana ban-pick per pertandingan: ban/pick tim kami vs tim lawan.</p>
+      </div>
+      <button class="btn" id="addDraftBtn">+ Buat Draft</button>
+    </div>
+    <div id="draftList"></div>
+  </section>
+
+</main>
+
+<!-- ===================== MODALS ===================== -->
+<div class="overlay" id="playerOverlay">
+  <div class="modal">
+    <h2 id="playerModalTitle">Tambah Pemain</h2>
+    <input type="hidden" id="playerId">
+    <div class="field"><label>Nama pemain</label><input id="playerName" placeholder="cth. Kairos"></div>
+    <div class="field-row">
+      <div class="field"><label>IGN</label><input id="playerIGN" placeholder="cth. NightOwl.Kai"></div>
+      <div class="field"><label>Role</label>
+        <select id="playerRole">
+          <option>Gold Laner</option>
+          <option>EXP Laner</option>
+          <option>Mid Laner</option>
+          <option>Jungler</option>
+          <option>Roamer</option>
+        </select>
+      </div>
+    </div>
+    <div class="field"><label>Hero pool (pisahkan dengan koma)</label><textarea id="playerPool" placeholder="cth. Beatrix, Melissa, Claude"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal('playerOverlay')">Batal</button>
+      <button class="btn" id="savePlayerBtn">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="oppOverlay">
+  <div class="modal">
+    <h2 id="oppModalTitle">Tambah Lawan</h2>
+    <input type="hidden" id="oppId">
+    <div class="logo-field">
+      <div class="logo-box" id="oppLogoBox">
+        <img id="oppLogoPreview" style="display:none;">
+        <span id="oppLogoPlaceholder">?</span>
+      </div>
+      <input type="file" id="oppLogoInput" accept="image/*" style="display:none">
+      <button type="button" class="btn ghost small" id="oppLogoBtn">Upload logo</button>
+    </div>
+    <div class="field"><label>Nama tim</label><input id="oppName" placeholder="cth. Phantom Guild"></div>
+    <div class="field-row">
+      <div class="field"><label>Username / IGN</label><input id="oppUsername" placeholder="cth. Phantom.Kai"></div>
+      <div class="field"><label>Rank saat ini</label><input id="oppRank" placeholder="cth. Mythic"></div>
+    </div>
+    <div class="field"><label>High rank</label><input id="oppHighRank" placeholder="cth. Mythical Glory"></div>
+    <div class="logo-field">
+      <div class="logo-box photo-box" id="oppPhotoBox">
+        <img id="oppPhotoPreview" style="display:none;">
+        <span id="oppPhotoPlaceholder">📷</span>
+      </div>
+      <input type="file" id="oppPhotoInput" accept="image/*" style="display:none">
+      <button type="button" class="btn ghost small" id="oppPhotoBtn">Upload foto profil lawan</button>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Region / Liga</label><input id="oppRegion" placeholder="cth. MPL ID"></div>
+      <div class="field"><label>Gaya main</label><input id="oppStyle" placeholder="cth. Early aggression"></div>
+    </div>
+    <div class="field"><label>Hero andalan / ban priority (pisahkan dengan koma)</label><textarea id="oppHeroes" placeholder="cth. Chou, Lylia, Wanwan"></textarea></div>
+    <div class="field"><label>Catatan ancaman & strategi lawan</label><textarea id="oppNotes" placeholder="Analisis kelemahan, rotasi, player kunci..."></textarea></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal('oppOverlay')">Batal</button>
+      <button class="btn" id="saveOppBtn">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="eventOverlay">
+  <div class="modal">
+    <h2 id="eventModalTitle">Tambah Agenda</h2>
+    <input type="hidden" id="eventId">
+    <div class="field"><label>Judul agenda</label><input id="eventTitle" placeholder="cth. Grand Final vs Phantom Guild"></div>
+    <div class="field-row">
+      <div class="field"><label>Tanggal</label><input id="eventDate" type="date"></div>
+      <div class="field"><label>Waktu</label><input id="eventTime" type="time"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Jenis</label>
+        <select id="eventType">
+          <option>Pertandingan resmi</option>
+          <option>Scrim</option>
+          <option>Deadline registrasi</option>
+          <option>Sesi review</option>
+          <option>Lainnya</option>
+        </select>
+      </div>
+      <div class="field"><label>Status</label>
+        <select id="eventStatus">
+          <option value="upcoming">Akan datang</option>
+          <option value="live">Sedang berlangsung</option>
+          <option value="done">Selesai</option>
+        </select>
+      </div>
+    </div>
+    <div class="field"><label>Catatan</label><textarea id="eventNotes" placeholder="Detail tambahan..."></textarea></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal('eventOverlay')">Batal</button>
+      <button class="btn" id="saveEventBtn">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="matchOverlay">
+  <div class="modal">
+    <h2>Catat Hasil Pertandingan</h2>
+    <div class="field-row">
+      <div class="field"><label>Hero</label><input id="matchHero" placeholder="cth. Beatrix"></div>
+      <div class="field"><label>Hasil</label>
+        <select id="matchResult">
+          <option value="win">Menang</option>
+          <option value="lose">Kalah</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Lawan main (opsional)</label>
+        <select id="matchOpponent"></select>
+      </div>
+      <div class="field"><label>Tanggal</label><input id="matchDate" type="date"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal('matchOverlay')">Batal</button>
+      <button class="btn" id="saveMatchBtn">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="draftOverlay">
+  <div class="modal">
+    <h2 id="draftModalTitle">Buat Draft</h2>
+    <input type="hidden" id="draftId">
+    <div class="field"><label>Judul / lawan pertandingan</label><input id="draftTitle" placeholder="cth. vs Phantom Guild — Grand Final"></div>
+    <div class="field-row">
+      <div class="field"><label>Ban tim kami (pisahkan dengan koma)</label><textarea id="draftBanUs" placeholder="cth. Chou, Lylia"></textarea></div>
+      <div class="field"><label>Ban tim lawan (pisahkan dengan koma)</label><textarea id="draftBanThem" placeholder="cth. Wanwan, Yin"></textarea></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Pick tim kami (pisahkan dengan koma)</label><textarea id="draftPickUs" placeholder="cth. Beatrix, Estes"></textarea></div>
+      <div class="field"><label>Pick tim lawan (pisahkan dengan koma)</label><textarea id="draftPickThem" placeholder="cth. Karrie, Angela"></textarea></div>
+    </div>
+    <div class="field"><label>Catatan strategi</label><textarea id="draftNotes" placeholder="Urutan draft, prioritas, rencana rotasi..."></textarea></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal('draftOverlay')">Batal</button>
+      <button class="btn" id="saveDraftBtn">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="resultOverlay">
+  <div class="modal">
+    <h2 id="resultModalTitle">Tambah Pertandingan</h2>
+    <input type="hidden" id="resultId">
+    <div class="field-row">
+      <div class="field"><label>Lawan</label>
+        <input id="resultOpponent" list="oppNameList" placeholder="cth. Phantom Guild">
+        <datalist id="oppNameList"></datalist>
+      </div>
+      <div class="field"><label>Hasil</label>
+        <select id="resultStatus">
+          <option value="win">Menang</option>
+          <option value="lose">Kalah</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Turnamen / agenda</label>
+        <input id="resultTournament" list="tournamentList" placeholder="cth. MPL ID Season 15">
+        <datalist id="tournamentList"></datalist>
+      </div>
+      <div class="field"><label>Skor</label><input id="resultScore" placeholder="cth. 2-1"></div>
+    </div>
+    <div class="field"><label>Tanggal</label><input id="resultDate" type="date"></div>
+    <div class="field"><label>Catatan</label><textarea id="resultNotes" placeholder="Rangkuman jalannya pertandingan..."></textarea></div>
+    <div class="field shot-upload-field">
+      <label>Screenshot hasil pertandingan</label>
+      <button type="button" class="btn ghost small shot-upload-btn" id="resultShotsBtn">Upload screenshot</button>
+      <input type="file" id="resultShotsInput" accept="image/*" multiple style="display:none">
+      <div class="shot-preview-list" id="resultShotsPreview"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal('resultOverlay')">Batal</button>
+      <button class="btn" id="saveResultBtn">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<div class="lightbox-overlay" id="lightboxOverlay" onclick="closeLightbox()">
+  <img id="lightboxImg" src="" alt="Screenshot pertandingan">
+</div>
+
+<script>
+const STORE_KEY = 'warroom_mlbb_v1';
+
+function loadData(){
+  const fallback = { players: [], opponents: [], events: [], matches: [], drafts: [], matchResults: [], team: {name:'', logo:''} };
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      const merged = Object.assign({}, fallback, parsed);
+      merged.team = Object.assign({}, fallback.team, parsed.team || {});
+      return merged;
+    }
+  }catch(e){}
+  return fallback;
+}
+function saveData(){
+  localStorage.setItem(STORE_KEY, JSON.stringify(state));
+}
+function uid(){ return Math.random().toString(36).slice(2,10); }
+
+let state = loadData();
+
+/* ---------------- Navigation ---------------- */
+document.querySelectorAll('.nav-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('page-'+btn.dataset.page).classList.add('active');
+  });
+});
+
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+/* ================= TEAM PROFILE ================= */
+function renderTeamProfile(){
+  document.getElementById('teamNameInput').value = state.team.name || '';
+  const img = document.getElementById('teamLogoImg');
+  const placeholder = document.getElementById('teamLogoPlaceholder');
+  if(state.team.logo){
+    img.src = state.team.logo; img.style.display='block'; placeholder.style.display='none';
+  }else{
+    img.style.display='none'; placeholder.style.display='flex';
+    placeholder.textContent = (state.team.name||'T').trim().charAt(0).toUpperCase() || 'T';
+  }
+}
+document.getElementById('teamNameInput').addEventListener('input', (e)=>{
+  state.team.name = e.target.value;
+  saveData();
+  const placeholder = document.getElementById('teamLogoPlaceholder');
+  if(!state.team.logo) placeholder.textContent = (state.team.name||'T').trim().charAt(0).toUpperCase() || 'T';
+});
+document.getElementById('teamLogoBox').addEventListener('click', ()=> document.getElementById('teamLogoInput').click());
+document.getElementById('teamLogoInput').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    state.team.logo = reader.result;
+    saveData(); renderTeamProfile();
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+});
+
+/* ================= ROSTER ================= */
+function renderRoster(){
+  const grid = document.getElementById('rosterGrid');
+  const q = document.getElementById('rosterSearch').value.trim().toLowerCase();
+  const list = state.players.filter(p =>
+    p.name.toLowerCase().includes(q) || p.ign.toLowerCase().includes(q)
+  );
+
+  const roles = {};
+  state.players.forEach(p => roles[p.role] = (roles[p.role]||0)+1);
+  const statStrip = document.getElementById('rosterStats');
+  statStrip.innerHTML = `
+    <div class="stat"><div class="n">${state.players.length}</div><div class="l">Total pemain</div></div>
+    ${Object.entries(roles).map(([r,c])=>`<div class="stat"><div class="n">${c}</div><div class="l">${r}</div></div>`).join('')}
+  `;
+
+  if(list.length===0){
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="display">Belum ada pemain</div>Tambahkan pemain pertama di roster tim kamu.</div>`;
+    return;
+  }
+  grid.innerHTML = list.map(p=>`
+    <div class="card">
+      <span class="role-tag">${p.role}</span>
+      <h3>${escapeHTML(p.name)}</h3>
+      <div class="ign">${escapeHTML(p.ign)}</div>
+      <div class="pool">${p.pool.length ? p.pool.map(escapeHTML).join(', ') : 'Belum ada hero pool'}</div>
+      <div class="rowbtns">
+        <button class="btn ghost small" onclick="editPlayer('${p.id}')">Edit</button>
+        <button class="btn danger small" onclick="deletePlayer('${p.id}')">Hapus</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+document.getElementById('rosterSearch').addEventListener('input', renderRoster);
+document.getElementById('addPlayerBtn').addEventListener('click', ()=>{
+  document.getElementById('playerModalTitle').textContent = 'Tambah Pemain';
+  document.getElementById('playerId').value = '';
+  document.getElementById('playerName').value = '';
+  document.getElementById('playerIGN').value = '';
+  document.getElementById('playerRole').value = 'Gold Laner';
+  document.getElementById('playerPool').value = '';
+  openModal('playerOverlay');
+});
+function editPlayer(id){
+  const p = state.players.find(x=>x.id===id);
+  if(!p) return;
+  document.getElementById('playerModalTitle').textContent = 'Edit Pemain';
+  document.getElementById('playerId').value = p.id;
+  document.getElementById('playerName').value = p.name;
+  document.getElementById('playerIGN').value = p.ign;
+  document.getElementById('playerRole').value = p.role;
+  document.getElementById('playerPool').value = p.pool.join(', ');
+  openModal('playerOverlay');
+}
+function deletePlayer(id){
+  if(!confirm('Hapus pemain ini dari roster?')) return;
+  state.players = state.players.filter(x=>x.id!==id);
+  saveData(); renderRoster();
+}
+document.getElementById('savePlayerBtn').addEventListener('click', ()=>{
+  const name = document.getElementById('playerName').value.trim();
+  const ign = document.getElementById('playerIGN').value.trim();
+  if(!name){ alert('Nama pemain wajib diisi'); return; }
+  const id = document.getElementById('playerId').value;
+  const pool = document.getElementById('playerPool').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const role = document.getElementById('playerRole').value;
+  if(id){
+    const p = state.players.find(x=>x.id===id);
+    Object.assign(p, {name, ign, role, pool});
+  }else{
+    state.players.push({id: uid(), name, ign, role, pool});
+  }
+  saveData(); renderRoster(); closeModal('playerOverlay');
+});
+
+/* ================= SCOUTING ================= */
+function renderOpponents(){
+  const wrap = document.getElementById('oppList');
+  const q = document.getElementById('oppSearch').value.trim().toLowerCase();
+  const list = state.opponents.filter(o => o.name.toLowerCase().includes(q));
+  if(list.length===0){
+    wrap.innerHTML = `<div class="empty"><div class="display">Belum ada data lawan</div>Tambahkan tim lawan untuk mulai scouting.</div>`;
+    return;
+  }
+  wrap.innerHTML = list.map(o=>`
+    <div class="opp-card">
+      <div class="opp-head">
+        <div class="opp-name-wrap">
+          ${o.logo
+            ? `<div class="opp-logo"><img src="${o.logo}"></div>`
+            : `<div class="opp-logo">${escapeHTML((o.name||'?').trim().charAt(0).toUpperCase())}</div>`}
+          <div>
+            <h3>${escapeHTML(o.name)}</h3>
+            <span class="meta">${o.username ? escapeHTML(o.username)+' · ' : ''}${escapeHTML(o.region || '—')}</span>
+          </div>
+        </div>
+        ${o.photo ? `<div class="opp-photo" onclick="openLightbox('${o.photo}')"><img src="${o.photo}"></div>` : ''}
+      </div>
+      ${(o.rank || o.highRank) ? `<div class="tags" style="margin-top:10px;">
+        ${o.rank ? `<span class="tag">Rank: ${escapeHTML(o.rank)}</span>` : ''}
+        ${o.highRank ? `<span class="tag">High rank: ${escapeHTML(o.highRank)}</span>` : ''}
+      </div>` : ''}
+      ${o.style ? `<div class="threat"><b>Gaya main:</b> ${escapeHTML(o.style)}</div>` : ''}
+      ${o.notes ? `<div class="threat">${escapeHTML(o.notes)}</div>` : ''}
+      ${o.heroes.length ? `<div class="tags">${o.heroes.map(h=>`<span class="tag">${escapeHTML(h)}</span>`).join('')}</div>` : ''}
+      ${(()=>{ const r = computeOpponentRecord(o.name); return r.games
+        ? `<div class="h2h-line"><b>${r.wins} menang / ${r.games} game</b> vs tim ini · win-rate ${r.wr}%</div>`
+        : `<div class="h2h-line">Belum ada rekor pertandingan vs tim ini.</div>`; })()}
+      <div class="rowbtns">
+        <button class="btn ghost small" onclick="editOpp('${o.id}')">Edit</button>
+        <button class="btn ghost small" onclick="quickLogMatch('${o.id}')">+ Catat hasil</button>
+        <button class="btn danger small" onclick="deleteOpp('${o.id}')">Hapus</button>
+      </div>
+    </div>
+  `).join('');
+}
+document.getElementById('oppSearch').addEventListener('input', renderOpponents);
+
+let oppLogoData = '';
+function updateOppLogoPreview(){
+  const img = document.getElementById('oppLogoPreview');
+  const ph = document.getElementById('oppLogoPlaceholder');
+  if(oppLogoData){ img.src = oppLogoData; img.style.display='block'; ph.style.display='none'; }
+  else{ img.style.display='none'; ph.style.display='flex'; }
+}
+document.getElementById('oppLogoBox').addEventListener('click', ()=> document.getElementById('oppLogoInput').click());
+document.getElementById('oppLogoBtn').addEventListener('click', ()=> document.getElementById('oppLogoInput').click());
+document.getElementById('oppLogoInput').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{ oppLogoData = reader.result; updateOppLogoPreview(); };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+});
+
+let oppPhotoData = '';
+function updateOppPhotoPreview(){
+  const img = document.getElementById('oppPhotoPreview');
+  const ph = document.getElementById('oppPhotoPlaceholder');
+  if(oppPhotoData){ img.src = oppPhotoData; img.style.display='block'; ph.style.display='none'; }
+  else{ img.style.display='none'; ph.style.display='flex'; }
+}
+document.getElementById('oppPhotoBox').addEventListener('click', ()=> document.getElementById('oppPhotoInput').click());
+document.getElementById('oppPhotoBtn').addEventListener('click', ()=> document.getElementById('oppPhotoInput').click());
+document.getElementById('oppPhotoInput').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{ oppPhotoData = reader.result; updateOppPhotoPreview(); };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+});
+
+document.getElementById('addOppBtn').addEventListener('click', ()=>{
+  document.getElementById('oppModalTitle').textContent = 'Tambah Lawan';
+  ['oppId','oppName','oppRegion','oppStyle','oppHeroes','oppNotes','oppUsername','oppRank','oppHighRank'].forEach(id=>document.getElementById(id).value='');
+  oppLogoData = ''; updateOppLogoPreview();
+  oppPhotoData = ''; updateOppPhotoPreview();
+  openModal('oppOverlay');
+});
+function editOpp(id){
+  const o = state.opponents.find(x=>x.id===id);
+  if(!o) return;
+  document.getElementById('oppModalTitle').textContent = 'Edit Lawan';
+  document.getElementById('oppId').value = o.id;
+  document.getElementById('oppName').value = o.name;
+  document.getElementById('oppRegion').value = o.region;
+  document.getElementById('oppStyle').value = o.style;
+  document.getElementById('oppHeroes').value = o.heroes.join(', ');
+  document.getElementById('oppNotes').value = o.notes;
+  document.getElementById('oppUsername').value = o.username || '';
+  document.getElementById('oppRank').value = o.rank || '';
+  document.getElementById('oppHighRank').value = o.highRank || '';
+  oppLogoData = o.logo || ''; updateOppLogoPreview();
+  oppPhotoData = o.photo || ''; updateOppPhotoPreview();
+  openModal('oppOverlay');
+}
+function deleteOpp(id){
+  if(!confirm('Hapus data lawan ini?')) return;
+  state.opponents = state.opponents.filter(x=>x.id!==id);
+  saveData(); renderOpponents();
+}
+document.getElementById('saveOppBtn').addEventListener('click', ()=>{
+  const name = document.getElementById('oppName').value.trim();
+  if(!name){ alert('Nama tim lawan wajib diisi'); return; }
+  const id = document.getElementById('oppId').value;
+  const region = document.getElementById('oppRegion').value.trim();
+  const style = document.getElementById('oppStyle').value.trim();
+  const heroes = document.getElementById('oppHeroes').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const notes = document.getElementById('oppNotes').value.trim();
+  const username = document.getElementById('oppUsername').value.trim();
+  const rank = document.getElementById('oppRank').value.trim();
+  const highRank = document.getElementById('oppHighRank').value.trim();
+  if(id){
+    const o = state.opponents.find(x=>x.id===id);
+    Object.assign(o, {name, region, style, heroes, notes, username, rank, highRank, logo: oppLogoData, photo: oppPhotoData});
+  }else{
+    state.opponents.push({id: uid(), name, region, style, heroes, notes, username, rank, highRank, logo: oppLogoData, photo: oppPhotoData});
+  }
+  saveData(); renderOpponents(); closeModal('oppOverlay');
+});
+
+/* ================= AGENDA ================= */
+const MONTHS = ['JAN','FEB','MAR','APR','MEI','JUN','JUL','AGU','SEP','OKT','NOV','DES'];
+function renderAgenda(){
+  const wrap = document.getElementById('agendaList');
+  const filter = document.getElementById('agendaFilter').value;
+  let list = [...state.events];
+  if(filter!=='all') list = list.filter(e=>e.status===filter);
+  list.sort((a,b)=> (a.date+(a.time||'')).localeCompare(b.date+(b.time||'')));
+
+  if(list.length===0){
+    wrap.innerHTML = `<div class="empty"><div class="display">Belum ada agenda</div>Tambahkan jadwal pertandingan atau scrim berikutnya.</div>`;
+    return;
+  }
+  wrap.innerHTML = list.map(e=>{
+    const dt = e.date ? new Date(e.date+'T00:00:00') : null;
+    const day = dt ? dt.getDate() : '—';
+    const mon = dt ? MONTHS[dt.getMonth()] : '';
+    const statusLabel = {upcoming:'Akan datang', live:'Berlangsung', done:'Selesai'}[e.status] || e.status;
+    return `
+    <div class="agenda-item">
+      <div class="agenda-date"><div class="d">${day}</div><div class="m">${mon}</div></div>
+      <div class="agenda-body">
+        <h3>${escapeHTML(e.title)}</h3>
+        <div class="meta">${escapeHTML(e.type)}${e.time ? ' · '+e.time : ''}${e.notes ? ' · '+escapeHTML(e.notes) : ''}</div>
+      </div>
+      <div class="agenda-actions">
+        <span class="status-pill status-${e.status}">${statusLabel}</span>
+        <button class="btn ghost small" onclick="editEvent('${e.id}')">Edit</button>
+        <button class="btn danger small" onclick="deleteEvent('${e.id}')">Hapus</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+document.getElementById('agendaFilter').addEventListener('change', renderAgenda);
+document.getElementById('addEventBtn').addEventListener('click', ()=>{
+  document.getElementById('eventModalTitle').textContent = 'Tambah Agenda';
+  ['eventId','eventTitle','eventDate','eventTime','eventNotes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('eventType').value = 'Pertandingan resmi';
+  document.getElementById('eventStatus').value = 'upcoming';
+  openModal('eventOverlay');
+});
+function editEvent(id){
+  const e = state.events.find(x=>x.id===id);
+  if(!e) return;
+  document.getElementById('eventModalTitle').textContent = 'Edit Agenda';
+  document.getElementById('eventId').value = e.id;
+  document.getElementById('eventTitle').value = e.title;
+  document.getElementById('eventDate').value = e.date;
+  document.getElementById('eventTime').value = e.time;
+  document.getElementById('eventType').value = e.type;
+  document.getElementById('eventStatus').value = e.status;
+  document.getElementById('eventNotes').value = e.notes;
+  openModal('eventOverlay');
+}
+function deleteEvent(id){
+  if(!confirm('Hapus agenda ini?')) return;
+  state.events = state.events.filter(x=>x.id!==id);
+  saveData(); renderAgenda();
+}
+document.getElementById('saveEventBtn').addEventListener('click', ()=>{
+  const title = document.getElementById('eventTitle').value.trim();
+  if(!title){ alert('Judul agenda wajib diisi'); return; }
+  const id = document.getElementById('eventId').value;
+  const date = document.getElementById('eventDate').value;
+  const time = document.getElementById('eventTime').value;
+  const type = document.getElementById('eventType').value;
+  const status = document.getElementById('eventStatus').value;
+  const notes = document.getElementById('eventNotes').value.trim();
+  if(id){
+    const e = state.events.find(x=>x.id===id);
+    Object.assign(e, {title, date, time, type, status, notes});
+  }else{
+    state.events.push({id: uid(), title, date, time, type, status, notes});
+  }
+  saveData(); renderAgenda(); closeModal('eventOverlay');
+});
+
+/* ================= HERO STATS (terintegrasi ke Roster & Data Lawan) ================= */
+function computeHeroStats(){
+  const byHero = {};
+  state.matches.forEach(m=>{
+    const key = (m.hero||'').trim();
+    if(!key) return;
+    if(!byHero[key]) byHero[key] = {games:0, wins:0};
+    byHero[key].games++;
+    if(m.result==='win') byHero[key].wins++;
+  });
+  return Object.entries(byHero)
+    .map(([hero, s]) => ({hero, ...s, wr: Math.round((s.wins/s.games)*100)}))
+    .sort((a,b)=> b.games - a.games || b.wr - a.wr);
+}
+function computeOpponentRecord(oppName){
+  const name = (oppName||'').trim().toLowerCase();
+  if(!name) return {games:0, wins:0, wr:0};
+  const list = state.matches.filter(m => (m.opponent||'').trim().toLowerCase() === name);
+  const wins = list.filter(m=>m.result==='win').length;
+  return {games:list.length, wins, wr: list.length ? Math.round((wins/list.length)*100) : 0};
+}
+function renderHeroSection(){
+  const heroList = document.getElementById('heroStatsList');
+  const log = document.getElementById('matchLog');
+  const totalGames = state.matches.length;
+
+  if(totalGames === 0){
+    heroList.innerHTML = `<div class="empty"><div class="display">Belum ada data pertandingan</div>Catat hasil untuk melihat win-rate hero tim.</div>`;
+    log.innerHTML = '';
+    return;
+  }
+  const totalWins = state.matches.filter(m=>m.result==='win').length;
+  const overallWR = Math.round((totalWins/totalGames)*100);
+  const rows = computeHeroStats();
+
+  heroList.innerHTML = `
+    <div class="h2h-line" style="margin-bottom:14px;"><b>${totalGames} game dicatat</b> · ${totalWins} menang · win-rate keseluruhan ${overallWR}%</div>
+    ${rows.map(r=>`
+      <div class="hero-row">
+        <div class="hname">${escapeHTML(r.hero)}</div>
+        <div class="bar-track"><div class="bar-fill ${r.wr>=60?'high':(r.wr<40?'low':'')}" style="width:${r.wr}%"></div></div>
+        <div class="games">${r.wins}M / ${r.games}G</div>
+        <div class="wr">${r.wr}%</div>
+      </div>
+    `).join('')}
+  `;
+
+  const sortedLog = [...state.matches].sort((a,b)=> (b.date||'').localeCompare(a.date||''));
+  log.innerHTML = sortedLog.map(m=>`
+    <div class="match-item">
+      <div>${m.date || '—'}</div>
+      <div>${escapeHTML(m.hero)}${m.opponent ? ' · vs '+escapeHTML(m.opponent) : ' · Latihan/lainnya'}</div>
+      <div><span class="result-pill ${m.result==='win'?'result-win':'result-lose'}">${m.result==='win'?'Menang':'Kalah'}</span></div>
+      <div><button class="btn danger small" onclick="deleteMatch('${m.id}')">Hapus</button></div>
+    </div>
+  `).join('');
+}
+function populateMatchOpponentSelect(selectedName){
+  const sel = document.getElementById('matchOpponent');
+  sel.innerHTML = '<option value="">— Latihan / lainnya —</option>' +
+    state.opponents.map(o=>`<option value="${escapeHTML(o.name)}">${escapeHTML(o.name)}</option>`).join('');
+  sel.value = selectedName || '';
+}
+document.getElementById('addMatchBtn').addEventListener('click', ()=>{
+  document.getElementById('matchHero').value = '';
+  document.getElementById('matchResult').value = 'win';
+  populateMatchOpponentSelect('');
+  document.getElementById('matchDate').value = '';
+  openModal('matchOverlay');
+});
+function quickLogMatch(oppId){
+  const o = state.opponents.find(x=>x.id===oppId);
+  document.getElementById('matchHero').value = '';
+  document.getElementById('matchResult').value = 'win';
+  populateMatchOpponentSelect(o ? o.name : '');
+  document.getElementById('matchDate').value = '';
+  openModal('matchOverlay');
+}
+document.getElementById('saveMatchBtn').addEventListener('click', ()=>{
+  const hero = document.getElementById('matchHero').value.trim();
+  if(!hero){ alert('Nama hero wajib diisi'); return; }
+  const result = document.getElementById('matchResult').value;
+  const opponent = document.getElementById('matchOpponent').value;
+  const date = document.getElementById('matchDate').value;
+  state.matches.push({id: uid(), hero, result, opponent, date});
+  saveData(); renderHeroSection(); renderOpponents(); closeModal('matchOverlay');
+});
+function deleteMatch(id){
+  if(!confirm('Hapus catatan pertandingan ini?')) return;
+  state.matches = state.matches.filter(x=>x.id!==id);
+  saveData(); renderHeroSection(); renderOpponents();
+}
+
+/* ================= DRAFT PLANNER ================= */
+function renderDrafts(){
+  const wrap = document.getElementById('draftList');
+  if(state.drafts.length === 0){
+    wrap.innerHTML = `<div class="empty"><div class="display">Belum ada draft</div>Buat rencana ban-pick untuk pertandingan berikutnya.</div>`;
+    return;
+  }
+  const chips = (arr) => arr.length ? arr.map(h=>`<div class="chip-item">${escapeHTML(h)}</div>`).join('') : `<div class="chip-item" style="color:var(--text-faint)">—</div>`;
+  wrap.innerHTML = state.drafts.map(d=>`
+    <div class="draft-card">
+      <div class="draft-head">
+        <h3>${escapeHTML(d.title)}</h3>
+      </div>
+      <div class="draft-cols">
+        <div class="draft-col ban-us"><div class="col-label">Ban Kami</div><div class="chips">${chips(d.banUs)}</div></div>
+        <div class="draft-col ban-them"><div class="col-label">Ban Lawan</div><div class="chips">${chips(d.banThem)}</div></div>
+        <div class="draft-col pick-us"><div class="col-label">Pick Kami</div><div class="chips">${chips(d.pickUs)}</div></div>
+        <div class="draft-col pick-them"><div class="col-label">Pick Lawan</div><div class="chips">${chips(d.pickThem)}</div></div>
+      </div>
+      ${d.notes ? `<div class="notes">${escapeHTML(d.notes)}</div>` : ''}
+      <div class="rowbtns">
+        <button class="btn ghost small" onclick="editDraft('${d.id}')">Edit</button>
+        <button class="btn danger small" onclick="deleteDraft('${d.id}')">Hapus</button>
+      </div>
+    </div>
+  `).join('');
+}
+document.getElementById('addDraftBtn').addEventListener('click', ()=>{
+  document.getElementById('draftModalTitle').textContent = 'Buat Draft';
+  ['draftId','draftTitle','draftBanUs','draftBanThem','draftPickUs','draftPickThem','draftNotes'].forEach(id=>document.getElementById(id).value='');
+  openModal('draftOverlay');
+});
+function editDraft(id){
+  const d = state.drafts.find(x=>x.id===id);
+  if(!d) return;
+  document.getElementById('draftModalTitle').textContent = 'Edit Draft';
+  document.getElementById('draftId').value = d.id;
+  document.getElementById('draftTitle').value = d.title;
+  document.getElementById('draftBanUs').value = d.banUs.join(', ');
+  document.getElementById('draftBanThem').value = d.banThem.join(', ');
+  document.getElementById('draftPickUs').value = d.pickUs.join(', ');
+  document.getElementById('draftPickThem').value = d.pickThem.join(', ');
+  document.getElementById('draftNotes').value = d.notes;
+  openModal('draftOverlay');
+}
+function deleteDraft(id){
+  if(!confirm('Hapus draft ini?')) return;
+  state.drafts = state.drafts.filter(x=>x.id!==id);
+  saveData(); renderDrafts();
+}
+document.getElementById('saveDraftBtn').addEventListener('click', ()=>{
+  const title = document.getElementById('draftTitle').value.trim();
+  if(!title){ alert('Judul draft wajib diisi'); return; }
+  const id = document.getElementById('draftId').value;
+  const split = (v) => v.split(',').map(s=>s.trim()).filter(Boolean);
+  const banUs = split(document.getElementById('draftBanUs').value);
+  const banThem = split(document.getElementById('draftBanThem').value);
+  const pickUs = split(document.getElementById('draftPickUs').value);
+  const pickThem = split(document.getElementById('draftPickThem').value);
+  const notes = document.getElementById('draftNotes').value.trim();
+  if(id){
+    const d = state.drafts.find(x=>x.id===id);
+    Object.assign(d, {title, banUs, banThem, pickUs, pickThem, notes});
+  }else{
+    state.drafts.push({id: uid(), title, banUs, banThem, pickUs, pickThem, notes});
+  }
+  saveData(); renderDrafts(); closeModal('draftOverlay');
+});
+
+/* ================= PERTANDINGAN (hasil turnamen + screenshot) ================= */
+let resultShotsData = [];
+
+function renderShotsPreview(){
+  const wrap = document.getElementById('resultShotsPreview');
+  wrap.innerHTML = resultShotsData.map((src, i)=>`
+    <div class="shot-preview-item">
+      <img src="${src}">
+      <button type="button" class="shot-remove" onclick="removeResultShot(${i})">✕</button>
+    </div>
+  `).join('');
+}
+function removeResultShot(i){
+  resultShotsData.splice(i,1);
+  renderShotsPreview();
+}
+document.getElementById('resultShotsBtn').addEventListener('click', ()=> document.getElementById('resultShotsInput').click());
+document.getElementById('resultShotsInput').addEventListener('change', (e)=>{
+  const files = Array.from(e.target.files || []);
+  let pending = files.length;
+  if(!pending) return;
+  files.forEach(file=>{
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      resultShotsData.push(reader.result);
+      pending--;
+      if(pending===0) renderShotsPreview();
+    };
+    reader.readAsDataURL(file);
+  });
+  e.target.value = '';
+});
+
+function openLightbox(src){
+  document.getElementById('lightboxImg').src = src;
+  document.getElementById('lightboxOverlay').classList.add('open');
+}
+function closeLightbox(){
+  document.getElementById('lightboxOverlay').classList.remove('open');
+}
+
+function populateResultDatalists(){
+  document.getElementById('oppNameList').innerHTML =
+    state.opponents.map(o=>`<option value="${escapeHTML(o.name)}">`).join('');
+  const titles = [...new Set(state.events.map(e=>e.title).filter(Boolean))];
+  document.getElementById('tournamentList').innerHTML =
+    titles.map(t=>`<option value="${escapeHTML(t)}">`).join('');
+}
+
+function renderMatchResults(){
+  const wrap = document.getElementById('resultList');
+  const q = document.getElementById('resultSearch').value.trim().toLowerCase();
+  const filter = document.getElementById('resultFilter').value;
+  let list = state.matchResults.filter(r =>
+    (r.opponent||'').toLowerCase().includes(q) || (r.tournament||'').toLowerCase().includes(q)
+  );
+  if(filter !== 'all') list = list.filter(r=>r.status===filter);
+  list = [...list].sort((a,b)=> (b.date||'').localeCompare(a.date||''));
+
+  if(list.length===0){
+    wrap.innerHTML = `<div class="empty"><div class="display">Belum ada pertandingan tercatat</div>Tambahkan hasil pertandingan turnamen beserta bukti screenshot-nya.</div>`;
+    return;
+  }
+  wrap.innerHTML = list.map(r=>`
+    <div class="result-card ${r.status==='win'?'is-win':'is-lose'}">
+      <div class="result-head">
+        <div>
+          <h3>vs ${escapeHTML(r.opponent || 'Tanpa nama')}</h3>
+          <span class="meta">${r.tournament ? escapeHTML(r.tournament)+' · ' : ''}${r.date || 'Tanggal belum diisi'}</span>
+        </div>
+        <span class="result-pill ${r.status==='win'?'result-win':'result-lose'}">${r.status==='win'?'Menang':'Kalah'}</span>
+      </div>
+      ${r.score ? `<div class="threat"><b>Skor:</b> ${escapeHTML(r.score)}</div>` : ''}
+      ${r.notes ? `<div class="threat">${escapeHTML(r.notes)}</div>` : ''}
+      ${r.shots && r.shots.length
+        ? `<div class="shot-thumbs">${r.shots.map(s=>`<div class="shot-thumb" onclick="openLightbox('${s}')"><img src="${s}"></div>`).join('')}</div>`
+        : `<div class="no-shots">Belum ada screenshot.</div>`}
+      <div class="rowbtns">
+        <button class="btn ghost small" onclick="editResult('${r.id}')">Edit</button>
+        <button class="btn danger small" onclick="deleteResult('${r.id}')">Hapus</button>
+      </div>
+    </div>
+  `).join('');
+}
+document.getElementById('resultSearch').addEventListener('input', renderMatchResults);
+document.getElementById('resultFilter').addEventListener('change', renderMatchResults);
+document.getElementById('addResultBtn').addEventListener('click', ()=>{
+  document.getElementById('resultModalTitle').textContent = 'Tambah Pertandingan';
+  ['resultId','resultOpponent','resultTournament','resultScore','resultDate','resultNotes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('resultStatus').value = 'win';
+  resultShotsData = [];
+  renderShotsPreview();
+  populateResultDatalists();
+  openModal('resultOverlay');
+});
+function editResult(id){
+  const r = state.matchResults.find(x=>x.id===id);
+  if(!r) return;
+  document.getElementById('resultModalTitle').textContent = 'Edit Pertandingan';
+  document.getElementById('resultId').value = r.id;
+  document.getElementById('resultOpponent').value = r.opponent;
+  document.getElementById('resultTournament').value = r.tournament;
+  document.getElementById('resultScore').value = r.score;
+  document.getElementById('resultStatus').value = r.status;
+  document.getElementById('resultDate').value = r.date;
+  document.getElementById('resultNotes').value = r.notes;
+  resultShotsData = [...(r.shots || [])];
+  renderShotsPreview();
+  populateResultDatalists();
+  openModal('resultOverlay');
+}
+function deleteResult(id){
+  if(!confirm('Hapus catatan pertandingan ini?')) return;
+  state.matchResults = state.matchResults.filter(x=>x.id!==id);
+  saveData(); renderMatchResults();
+}
+document.getElementById('saveResultBtn').addEventListener('click', ()=>{
+  const opponent = document.getElementById('resultOpponent').value.trim();
+  if(!opponent){ alert('Nama lawan wajib diisi'); return; }
+  const id = document.getElementById('resultId').value;
+  const tournament = document.getElementById('resultTournament').value.trim();
+  const score = document.getElementById('resultScore').value.trim();
+  const status = document.getElementById('resultStatus').value;
+  const date = document.getElementById('resultDate').value;
+  const notes = document.getElementById('resultNotes').value.trim();
+  const shots = [...resultShotsData];
+  if(id){
+    const r = state.matchResults.find(x=>x.id===id);
+    Object.assign(r, {opponent, tournament, score, status, date, notes, shots});
+  }else{
+    state.matchResults.push({id: uid(), opponent, tournament, score, status, date, notes, shots});
+  }
+  saveData(); renderMatchResults(); closeModal('resultOverlay');
+});
+
+/* ================= EXPORT / IMPORT ================= */
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'warroom-data.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+document.getElementById('importBtn').addEventListener('click', ()=>{
+  document.getElementById('importFile').click();
+});
+document.getElementById('importFile').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try{
+      const data = JSON.parse(reader.result);
+      if(!data.players || !data.opponents || !data.events) throw new Error('format tidak sesuai');
+      if(!data.matches) data.matches = [];
+      if(!data.drafts) data.drafts = [];
+      if(!data.matchResults) data.matchResults = [];
+      if(!data.team) data.team = {name:'', logo:''};
+      state = data;
+      saveData();
+      renderTeamProfile(); renderRoster(); renderOpponents(); renderAgenda(); renderHeroSection(); renderDrafts(); renderMatchResults();
+      alert('Data berhasil diimpor.');
+    }catch(err){
+      alert('Gagal impor: file JSON tidak valid.');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+function escapeHTML(str){
+  return String(str).replace(/[&<>"']/g, m => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[m]));
+}
+
+/* Init */
+renderTeamProfile();
+renderRoster();
+renderOpponents();
+renderAgenda();
+renderHeroSection();
+renderDrafts();
+renderMatchResults();
+</script>
+</body>
+</html>
